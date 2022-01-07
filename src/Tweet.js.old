@@ -1,0 +1,116 @@
+import PropTypes from 'prop-types'
+import React, { useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import TweetReply from './TwitterReply'
+import APIInvoker from './utils/APIInvoker'
+import {render} from 'react-dom'
+
+
+export default function Tweet(props) {
+  let browserHistory = useNavigate()
+  const [tweetss, setTweetss] = useState({tweet:props.tweet, showDialog: false})
+  
+  //let tweet = props.tweet
+  let tweetClass = null
+
+
+  const handleReply = (e)=>{
+    let html = document.getElementsByTagName("html")[0]
+    html.addClass("modal-mode")
+    e.preventDefault()
+    if (!props.detail) {
+      render(<TweetReply tweet={props.tweet} 
+      profile= {tweetss.tweet._creator}/>,
+        document.getElementById('dialog')
+        )
+    }
+  }
+
+  const handleClick = (e) =>{
+    if(e.target.getAttribute("data-ignore-onclick")){
+      return
+    }
+    let url = `/${tweetss.tweet._creator.userName}/${tweetss.tweet._id}`
+    browserHistory.push(url)
+    let tweetId = e.target.id
+
+  }
+
+  const handleLike = (e)=>{
+    e.preventDefault()
+    let request = {
+      tweetID: tweetss.tweet._id,
+      like: !tweetss.tweet.liked
+    }
+
+    APIInvoker.invokePOST('/secure/like', request, res=>{
+      let newState = tweetss
+      newState.tweet.likeCounter = res.body.likeCounter
+      newState.tweet.liked = !res.body.liked
+setTweetss(newState)
+    })
+  }
+
+  if (props.detail) {
+    tweetClass = 'tweet detail'
+  } else {
+    tweetClass = tweetss.tweet.isNew ? 'tweet fadeIn animated' : 'tweet'
+  }
+  return (
+    <article className={tweetClass} onClick={props.detail ? '' : handleClick(this)}
+    id={`tweet-${tweetss.tweet._id}`}>
+      <img src={tweetss.tweet._creator.avatar} className="tweet-avatar" />
+      <div className="tweet-body">
+        <div className="tweet-user">
+          <Link to = {`/${tweetss.tweet._creator.userName}`}>
+            <span className="tweet-name" data-ignore-onclick>
+              {tweetss.tweet._creator.name}
+            </span>
+            </Link>
+          <span className="tweet-username">@{tweetss.tweet._creator.userName}</span>
+        </div>
+        <p className="tweet-message">{tweetss.tweet.message}</p>
+        {tweetss.tweet.image != null ? (
+          <img className="tweet-img" src={tweetss.tweet.image} />
+        ) : ('')}
+
+        <div className="tweet-footer">
+          <a
+            className={tweetss.tweet.liked ? 'like-icon liked' : 'like-icon'}
+            onClick={handleLike(this)}
+            data-ignore-onclick
+          >
+            <i
+              className="fa fa-heart "
+              aria-hidden="true"
+              data-ignore-onclick
+            ></i>
+            {tweetss.tweet.likeCounter}
+          </a>
+          {!props.detail ? (
+            <a className="reply-icon" data-ignore-onclick onClick={handleReply(this)}>
+              <i
+                className="fa fa-reply "
+                aria-hidden="true"
+                data-ignore-onclick
+              ></i>replyss
+              {tweetss.tweet.replys}
+            </a>
+          ) : (
+            ''
+          )}
+        </div>
+      </div>
+      <div id={`tweet-detail-${tweetss.tweet._id}`} />
+    </article>
+  )
+}
+
+Tweet.propTypes = {
+  tweet: PropTypes.object.isRequired,
+  detail: PropTypes.bool,
+}
+
+Tweet.defaultProps = {
+  detail: false,
+}

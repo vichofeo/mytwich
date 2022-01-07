@@ -1,0 +1,90 @@
+import PropTypes from 'prop-types'
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import APIInvoker from './utils/APIInvoker'
+import Tweet from './Tweet'
+import Reply from './Reply'
+export default function TweetDetail(props) {
+  let browserHistory = useNavigate()
+  let html = document.getElementsByTagName("html")[0]
+  const [tweets, setTweets] = useState([])
+
+  useEffect(() => {
+    let tweet = props.params.tweet
+    APIInvoker.invokeGET(
+      `/tweetDetails/${tweet}`,
+      (res) => {
+        setTweets(res.body)
+      },
+      (err) => {
+        console.log('error al cargar los tweets')
+      }
+    )
+  }, [])
+
+  const addNewTweet = (newTweet) => {
+    let oldState = tweets
+    let newState = tweets
+    newState.unshift(newTweet)
+    setTweets([newTweet])
+
+    let request = {
+      tweetParent: props.params.tweet,
+      message: newTweet.message,
+      image: newTweet.image,
+    }
+    APIInvoker.invokePOST(
+      '/secure/tweet',
+      request,
+      (res) => {},
+      (error) => {
+        console.log('Error al cargar los tweets')
+      }
+    )
+  }
+
+  const handleClose = () => {
+    
+    html.removeClass('modal-mode')
+    browserHistory.goBack()
+  }
+  html.addClass('modal-mode')
+  let operations = {
+    addNewTweet: addNewTweet(),
+  }
+  return (
+    <div className="fullscreen">
+    {(()=>{
+        if(tweets == null){
+return <div className="tweet-detail">
+            <i className="fa fa-circle-o-notch fa-spin fa-3x fa-fw"></i>
+          </div>
+        }else{
+            return <div className="tweet-detail">
+            <i
+              className="fa fa-times fa-2x tweet-close"
+              aria-hidden="true"
+              onClick={handleClose(this)}
+            />
+            <Tweet tweet={tweets} detail={true} />
+            <div className="tweet-details-reply">
+              <Reply
+                profile={tweets._creator}
+                operations={operations}
+                key={`detail-${tweets._id}`}
+                newReply={false}
+              />
+            </div>
+            <ul className="tweet-detail-responses">
+              
+              {tweets.replysTweets != null && tweets.replysTweets.map(reply=>( <li className="tweet-details-reply" key={reply._id}>
+                    <Tweet tweet={reply} detail={true} />
+                  </li>)) }
+            </ul>
+          </div>
+        }
+    })()}
+     
+    </div>
+  )
+}

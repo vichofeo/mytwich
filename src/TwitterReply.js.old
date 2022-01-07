@@ -1,0 +1,61 @@
+import PropTypes from 'prop-types'
+import Reply from './Reply'
+import Tweet from './Tweet'
+import APIInvoker from './utils/APIInvoker'
+export default function TweetReply(props) {
+
+  const handleClose = () => {
+    let html = document.getElementsByTagName("html")[0]
+    let dialog = document.getElementById("dialog")
+    html.removeClass('modal-mode')
+    dialog.html(
+      (()=>{
+          if (!props.detail) {
+           return <a className="reply-icon"  data-ignore-onclick>
+            <i className="fa fa-reply " aria-hidden="true" data-ignore-onclick></i>
+            tweeteReply -->{this.state.replys}
+          </a>
+          }
+      })()
+    )
+  }
+  const addNewTweet = (newTweet) => {
+    let request = {
+      tweetParent: props.tweet._id,
+      //message: newTweet.message,
+      //image: newTweet.image,
+    }
+    APIInvoker.invokePOST(
+      '/secure/tweet',
+      request,
+      (response) => {
+        handleClose()
+      },
+      (err) => {
+        console.log('Error al carar los Tweets')
+      }
+    )
+  }
+
+
+
+  let operations = {
+    addNewTweet: addNewTweet(this),
+  }
+  return (
+    <div className="fullscreen">
+      <div className="tweet-detail">
+        <i
+          className="fa fa-times fa-2x tweet-close"
+          aria-hidden="true"
+          onClick={handleClose.bind(this)}
+        />
+        <Tweet tweet={props.tweet} detail={true} />
+
+        <div className="tweet-details-reply">
+          <Reply profile={props.profile} operations={operations} />
+        </div>
+      </div>
+    </div>
+  )
+}
